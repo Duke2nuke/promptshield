@@ -13,7 +13,7 @@ PromptShield screens a prompt before it reaches an LLM app. It blocks injection 
 ## Modes, stated honestly
 
 - Local demo mode: no Nebius key set. Screening uses the TF-IDF baseline plus rules. Every response says mode is local_demo. This is not a Nemotron call, and the app does not claim otherwise.
-- Live Nemotron mode: set NEBIUS_API_KEY in a .env file. The guard calls Nebius Token Factory at https://api.tokenfactory.nebius.com/v1/chat/completions with the model in NEBIUS_MODEL. The default model name in .env.example is a placeholder to change to the exact model ID in your Token Factory account.
+- Live Nemotron mode: set NEBIUS_API_KEY in a .env file. The guard calls Nebius Token Factory at https://api.tokenfactory.nebius.com/v1/chat/completions with the model in NEBIUS_MODEL. Verified model IDs, from a live models list call on 30 Oct 2026: Nano nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B, Super nvidia/nemotron-3-super-120b-a12b, Ultra nvidia/Nemotron-3-Ultra-550b-a55b. A live Nano screening test on a benign educational prompt returned ALLOWED, with 200 total tokens.
 - Tavily live mode: set TAVILY_API_KEY. Without it, the app shows curated fallback links and says so.
 - PyTorch mode: if torch is installed, /api/pytorch trains a small MLP on TF-IDF features. If torch is missing, that endpoint reports unavailable, and the main guard still works.
 - OpenCV mode: if opencv-python-headless and tesseract are installed, image checking works. If they are missing, that endpoint reports unavailable, and the main guard still works.

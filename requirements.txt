@@ -1,0 +1,8 @@
+Flask>=3.0
+requests>=2.31
+scikit-learn>=1.3
+python-dotenv>=1.0
+# Optional, used only if installed. The app does not crash without them.
+torch>=2.0
+opencv-python-headless>=4.8
+pytesseract>=0.3

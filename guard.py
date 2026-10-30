@@ -105,6 +105,22 @@ def check_prompt(text):
     hits = rule_hits(text)
     baseline_verdict = "BLOCKED" if inj >= 0.5 else "ALLOWED"
     verdict, explanation, mode = nemotron_check(text)
+    # Second scored baseline: PyTorch MLP on the same TF-IDF features.
+    # Scored on every check when torch is installed, reported honestly
+    # when it is not. It does NOT override the main verdict, so a weaker
+    # PyTorch score cannot silently change a guard decision.
+    pytorch_prob = None
+    try:
+        from pytorch_classifier import predict_probability
+
+        train_texts = [t for t, _ in TRAIN]
+        train_labels = [y for _, y in TRAIN]
+        pytorch_prob = predict_probability(text, train_texts, train_labels)
+    except Exception:  # noqa: BLE001, PyTorch is a scored baseline, not a crash
+        pytorch_prob = None
+    pytorch_verdict = None
+    if pytorch_prob is not None:
+        pytorch_verdict = "BLOCKED" if pytorch_prob >= 0.5 else "ALLOWED"
     risk = int(round(max(inj, 0.85 if hits else inj) * 100)) if verdict == "BLOCKED" else int(round(inj * 100))
     return {
         "prompt": text,
@@ -112,6 +128,9 @@ def check_prompt(text):
         "risk": risk,
         "baseline_probability": round(inj, 3),
         "baseline_verdict": baseline_verdict,
+        "pytorch_probability": round(pytorch_prob, 3) if pytorch_prob is not None else None,
+        "pytorch_verdict": pytorch_verdict,
+        "pytorch_available": pytorch_prob is not None,
         "rule_hits": hits,
         "explanation": explanation,
         "mode": mode,

@@ -11,11 +11,17 @@ document.getElementById("checkBtn").onclick = async () => {
   const prompt = document.getElementById("prompt").value;
   const data = await postJSON("/api/check", { prompt });
   if (data.error) { show("result", "Error: " + data.error); return; }
-  show("result", `Verdict: ${data.verdict}\nRisk: ${data.risk}\nMode: ${data.mode}\nBaseline: ${data.baseline_verdict} (${data.baseline_probability})\nExplanation: ${data.explanation}`);
+  const pytorchLine = data.pytorch_available
+    ? `PyTorch MLP: ${data.pytorch_verdict} (${data.pytorch_probability})`
+    : `PyTorch MLP: unavailable (torch not installed)`;
+  show("result", `Verdict: ${data.verdict}\nRisk: ${data.risk}\nMode: ${data.mode}\nBaseline: ${data.baseline_verdict} (${data.baseline_probability})\n${pytorchLine}\nExplanation: ${data.explanation}`);
 };
 document.getElementById("evalBtn").onclick = async () => {
   const data = await fetch("/api/evaluate").then(r => r.json());
-  show("eval", `Evaluation on ${data.total} test prompts\nAccuracy: ${data.accuracy}\nTrue positives: ${data.tp}\nFalse positives: ${data.fp}\nTrue negatives: ${data.tn}\nFalse negatives: ${data.fn}`);
+  const py = data.pytorch && data.pytorch.available
+    ? `\nPyTorch MLP: accuracy ${data.pytorch.accuracy}, TP ${data.pytorch.tp}, FP ${data.pytorch.fp}, TN ${data.pytorch.tn}, FN ${data.pytorch.fn}`
+    : `\nPyTorch MLP: unavailable`;
+  show("eval", `Evaluation on ${data.total} test prompts\nAccuracy: ${data.accuracy}\nTrue positives: ${data.tp}\nFalse positives: ${data.fp}\nTrue negatives: ${data.tn}\nFalse negatives: ${data.fn}${py}`);
 };
 document.getElementById("tavilyBtn").onclick = async () => {
   const data = await fetch("/api/tavily").then(r => r.json());

@@ -65,7 +65,27 @@ def api_image_check():
 
 @app.route("/api/health")
 def health():
-    return jsonify({"status": "ok", "app": "PromptShield", "nemotron_live": bool(os.environ.get("NEBIUS_API_KEY")), "tavily_live": bool(os.environ.get("TAVILY_API_KEY"))})
+    import shutil
+
+    try:
+        from pytorch_classifier import TORCH_AVAILABLE
+    except Exception:  # noqa: BLE001
+        TORCH_AVAILABLE = False
+    try:
+        import cv2  # noqa: F401
+
+        opencv_available = True
+    except Exception:  # noqa: BLE001
+        opencv_available = False
+    return jsonify({
+        "status": "ok",
+        "app": "PromptShield",
+        "nemotron_live": bool(os.environ.get("NEBIUS_API_KEY")),
+        "tavily_live": bool(os.environ.get("TAVILY_API_KEY")),
+        "torch_available": bool(TORCH_AVAILABLE),
+        "opencv_available": opencv_available,
+        "tesseract_available": shutil.which("tesseract") is not None,
+    })
 
 
 if __name__ == "__main__":

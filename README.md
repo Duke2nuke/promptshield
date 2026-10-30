@@ -1,5 +1,11 @@
 # PromptShield, LLM Firewall on Nemotron
 
+## Try it live first, no login required
+
+**Live demo: https://promptshield-tjnp.onrender.com**
+
+Click the live demo link above, type a prompt, and try BLOCKED vs ALLOWED yourself. No login, no key, no install. Free Render tier, so the first load after inactivity may take up to about 50 seconds while it wakes up. The hosted demo runs in local_demo mode, TF-IDF baseline plus rules, with Nemotron live false, unless a Nebius key is set in the host dashboard. Run it locally from the instructions below if you prefer, or use the repo code directly.
+
 PromptShield screens a prompt before it reaches an LLM app. It blocks injection style prompts, explains why, and allows benign prompts through. It is built for the Nebius x NVIDIA Global AI Hackathon, Best Apps and Agents track.
 
 ## What it does, in one demo
@@ -13,10 +19,10 @@ PromptShield screens a prompt before it reaches an LLM app. It blocks injection 
 ## Modes, stated honestly
 
 - Local demo mode: no Nebius key set. Screening uses the TF-IDF baseline plus rules. Every response says mode is local_demo. This is not a Nemotron call, and the app does not claim otherwise.
-- Live Nemotron mode: set NEBIUS_API_KEY in a .env file. The guard calls Nebius Token Factory at https://api.tokenfactory.nebius.com/v1/chat/completions with the model in NEBIUS_MODEL. Verified model IDs, from a live models list call on 30 Oct 2026: Nano nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B, Super nvidia/nemotron-3-super-120b-a12b, Ultra nvidia/Nemotron-3-Ultra-550b-a55b. A live Nano screening test on a benign educational prompt returned ALLOWED, with 200 total tokens.
+- Live Nemotron mode: set NEBIUS_API_KEY in a .env file. The guard calls Nebius Token Factory at https://api.tokenfactory.nebius.com/v1/chat/completions with the model in NEBIUS_MODEL. Verified model IDs, from a live models list call on 30 Oct 2026: Nano nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B, Super nvidia/nemotron-3-super-120b-a12b, Ultra nvidia/Nemotron-3-Ultra-550b-a55b. A live Nano screening test on a benign educational prompt returned ALLOWED, with 200 total tokens. A live Nano evaluation on the 14-prompt TEST set on 31 Oct 2026 returned 14/14 correct, TP 6, FP 0, TN 8, FN 0, with the caveat in EVALUATION.md about one benign reply not following the BLOCKED/ALLOWED format. This does not replace the external-set baseline results.
 - Tavily live mode: set TAVILY_API_KEY. Without it, the app shows curated fallback links and says so.
-- PyTorch mode: if torch is installed, /api/pytorch trains a small MLP on TF-IDF features. If torch is missing, that endpoint reports unavailable, and the main guard still works.
-- OpenCV mode: if opencv-python-headless and tesseract are installed, image checking works. If they are missing, that endpoint reports unavailable, and the main guard still works.
+- PyTorch mode, now core: if torch is installed, every /api/check response carries pytorch_probability, pytorch_verdict, and pytorch_available, and /api/evaluate reports the PyTorch MLP separately. Measured 30 Oct 2026 on the 14-prompt test set: PyTorch accuracy 0.857, TP 6, FP 2, TN 6, FN 0, versus main guard 1.000, TP 6, FP 0, TN 8, FN 0. The PyTorch verdict does not override the main verdict. If torch is missing, those fields report unavailable, and the main guard still works.
+- OpenCV mode, now core: if opencv-python-headless and tesseract are installed, /api/image-check preprocesses with OpenCV, extracts text with OCR, and screens it with the same guard, including the PyTorch baseline. Measured 30 Oct 2026: benign test image ALLOWED, injection-style test image BLOCKED, both with OCR and OpenCV available. If they are missing, that endpoint reports unavailable, and the main guard still works.
 
 A guard is a layer, not a guarantee. Results on the small demo dataset are not real world security claims.
 
@@ -26,8 +32,15 @@ A guard is a layer, not a guarantee. Results on the small demo dataset are not r
 python3 -m venv .venv
 source .venv/bin/activate
 pip install Flask requests scikit-learn python-dotenv
+pip install --no-cache-dir opencv-python-headless pytesseract pillow
+pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 python3 app.py
 ```
+
+For the image check, tesseract must also be installed on the system
+(for example, apt-get install tesseract-ocr). The Dockerfile installs
+it. Without tesseract, OpenCV preprocessing still runs, but OCR reports
+unavailable and no text is extracted.
 
 Open http://127.0.0.1:5000
 
